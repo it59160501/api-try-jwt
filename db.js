@@ -1,7 +1,7 @@
 const mongodb = require('mongodb')
+const { MongoURL } = require('./config')
 
 const MongoClient = mongodb.MongoClient
-const MongoURL = process.env.MONGODB_URL
 const options = { useNewUrlParser : true, useUnifiedTopology : true}
 
 

@@ -2,12 +2,16 @@ const express = require("express")
 const bcrypt = require("bcryptjs")
 const mongodb = require('mongodb')
 const auth = require("./auth")
+const jwt = require("jsonwebtoken")
+const { port,jwtKey } = require('./config')
 
 const app = express()
-const port = process.env.PORT
+// const port = process.env.PORT
+// const jwtKey = process.env.JWT_KEY
 const database = "buu"
 const collection = "users"
 const connectDb = "./db"
+
 
 app.use(express.json())
 
@@ -71,7 +75,7 @@ app.post('/sign-in', async (req, res)=>{
         return
     }
     //payload
-    let token = await jwt.sign({email:user.email, id: user._id},jwtKey)
+    let token = await jwt.sign({email:user.email, id: user._id},jwtKey,{expiresIn: 30})
 
     res.status(200).json({token: token})
 })
@@ -105,6 +109,25 @@ app.get('/me', auth, async (req,res)=>{
     delete user.password
 
     res.json(user)
+})
+
+app.put('/me', auth, async (req,res) => {
+    let decoded = req.decoded
+    let newEmail = req.body.email
+
+    const client = await require(connectDb)
+    let db = client.db(database)
+    let result = await db.collection(collection).updateOne(
+        
+        { _id : mongodb.ObjectID(decoded.id)},
+        {$set: { email : newEmail}} 
+
+    ).catch(err => {
+        console.log(`Cannot update email by id in /me : ${err}`)
+        res.status(500).send({error:err})
+        return
+    })
+    res.sendStatus(204)
 })
 
 app.listen(port, () => {
